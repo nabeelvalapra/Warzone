@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MY Registration</title>
+    </head>
+
+    <body>
+        <h1>Register</h1>
+
+        {% if registered %}
+        Rango says: <strong>thank you for registering!</strong>
+        <a href="/rango/">Return to the homepage.</a><br />
+        {% else %}
+        Rango says: <strong>register here!</strong><br />
+
+        <form id="user_form" method="post" action="/registration02/register/"
+                enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            Username:{{ user_form.username }} <br />
+            Password:{{ user_form.password }} <br />
+            Email:{{ user_form.email }} <br />
+            LastLogin:{{user_form.last_login}}
+            DateJoined:{{user_form.date_joined}}
+            
+            Address:{{ profile_form.address }}<br />
+			Phone NO:{{ profile_form.phone_num }}<br />
+            <input type="submit" name="submit" value="Register" />
+        </form>
+        {% endif %}
+    </body>
+</html>

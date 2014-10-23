@@ -1,0 +1,18 @@
+<html>
+	<h1>The data saved in databases using forms.</h1>
+	
+	<br /><br />
+	<form action="/fmzone/formset/" method="post">
+		{% csrf_token %}
+		{% for form in formset %}
+			{{ form.as_p }} <br />
+			<br />
+			<br />
+		{% endfor %}
+		{{ formset.management_form }}
+			<br />
+			<input type="submit" value="submit" />
+	</form>
+	
+	
+</html>

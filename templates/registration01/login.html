@@ -1,0 +1,21 @@
+<html>
+	This is your login page...
+	<br />
+	Welcome...
+	<br />
+	<br />
+	<br />
+	<br />
+	<form action="/registration01/authenticate/" method="post">
+		{% csrf_token %}
+		<label for="username">Username:</label>
+		<input type="text" name="username" value="" id="username"/>
+		<br />
+		<label for="password">Password:</label>
+		<input type="password"  name="password" value="" id="password"/>
+		<br />
+		<input type="submit" value="login"/>
+	</form>
+	<br /><br />
+	<a href="/registration01/register/">--Register here--</a>
+</html>

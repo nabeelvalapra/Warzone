@@ -1,0 +1,20 @@
+<html>
+	<h1>UserID:{{user}}</h1>
+	Add your file to upload:
+	<form action="/gdrive/" method="post" enctype="multipart/form-data">
+		{% csrf_token %}
+		{{form}}
+		<input type="submit" value="Go" />
+	</form>
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	<br />
+	File upload and Google Drive API is done here.
+</html>

@@ -1,0 +1,4 @@
+In this module you can create account by username, password, email id.
+The username and password will be saved.
+You can add manually email in database.
+or login through super email id or super username is possible.

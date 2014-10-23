@@ -1,0 +1,11 @@
+<html>
+	<h1>Welcome to the Form - Models.......</h1>
+	<form action="/fmzone/" method="post">
+		{% csrf_token %}
+			{{ form.as_p }}
+			<br />
+			<br />
+			<br />
+		<input type="submit" value="SUBMIT" />
+	</form>
+</html>
