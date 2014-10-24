@@ -14,26 +14,55 @@ from oauth2client.file import Storage
 from django.core import serializers
 from apiclient import errors
 
+from pydrive.auth import GoogleAuth
+
 
 @login_required
-def upload(request):
+def upload2(request):
     if request.method == 'POST':
-        form = FileForm(request.POST,request.FILES)
+        form = FileForm(request.POST, request.FILES)
+        if form.is_valid():
+#             savedfile = form.save()
+#             
+#             request.session['drivefile_id'] = str(savedfile.id)
+#             request.session['filename'] = str(request.FILES['file_name'])
+#             request.session['mimetype'] = str(request.FILES['file_name'].content_type)
+#             request.session['filepath'] = str(savedfile.file_name.path)
+#             user = request.user
+#             
+            gauth = GoogleAuth()
+            auth_url = gauth.GetAuthUrl()
+            return redirect(auth_url)
+    
+    elif request.method == 'GET':
+        if request.GET.get('code'):
+            token = request.GET.get('code')
+            return HttpResponse(token)
+        else:
+            form = FileForm() 
+        
+    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form,'user':request.user.id})
+ 
+ 
+@login_required
+def firstwar(request):
+    if request.method == 'POST':
+        form = FileForm(request.POST, request.FILES)
         if form.is_valid():
             savedfile = form.save()
-            
+             
             request.session['drivefile_id'] = str(savedfile.id)
             request.session['filename'] = str(request.FILES['file_name'])
             request.session['mimetype'] = str(request.FILES['file_name'].content_type)
             request.session['filepath'] = str(savedfile.file_name.path)
             user = request.user
-            
+             
             storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
             try:
                 if not storage.get():
                     OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive'
                     CLIENT_SECRETS = 'gdrive/client_secrets.json'
-                    REDIRECT_URI = 'http://localhost:8000/gdrive/callback/'
+                    REDIRECT_URI = 'http://localhost:8000/gdrive/firstwar/'
                     FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
                     FLOW.redirect_uri = REDIRECT_URI
                     FlowModel(user=user,flow=FLOW).save()
@@ -45,83 +74,79 @@ def upload(request):
             except:
                 os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
                 return redirect('/')
-    else:
-        form = FileForm()    
-                
-    return render(request,'gdrive/uploadfile.html',{'form':form,'user':request.user.id})
-
-
-@login_required
-def gdrive_callback(request):
-    token = request.GET.get("code")
-    
-    user = User.objects.get(id=request.user.id)
-    FLOW = FlowModel.objects.get(user_id=user.id).flow
-    
-    credentials = FLOW.step2_exchange(token)
-    storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
-    storage.put(credentials)
-    
-    return google_file_exce(credentials,request)
-
-
+    elif request.method == 'GET':
+        if request.GET.get('code'):
+            token = request.GET.get("code")
+     
+            user = User.objects.get(id=request.user.id)
+            FLOW = FlowModel.objects.get(user_id=user.id).flow
+             
+            credentials = FLOW.step2_exchange(token)
+            storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
+            storage.put(credentials)
+             
+            return google_file_exce(credentials,request)
+        else:
+            form = FileForm() 
+                 
+    return render(request,'gdrive/firstwar/uploadfile.html',{'form':form,'user':request.user.id})
+ 
+ 
 def google_file_exce(credentials,request):
-    drivefile_id = request.session['drivefile_id']
     FileName = request.session['filename']
     MimeType = request.session['mimetype']
     FilePath = request.session['filepath']
     try:
         http = httplib2.Http()
         credentials.authorize(http) 
-                 
+                  
         drive_service = build('drive', 'v2', http=http)
-        def retrieve_all_files(service):
-            result = []
-            page_token = None
-            while True:
-                try:
-                    param = {}
-                    if page_token:
-                        param['pageToken'] = page_token
-                    files = service.files().list(**param).execute()
-                     
-                    result.extend(files['items'])
-                    page_token = files.get('nextPageToken')
-                    if not page_token:
-                        break
-                except errors.HttpError, error:
-                    print 'An error occurred: %s' % error
-                    
-                    import pdb; pdb.set_trace()
-                    break
-            return result
         
         media_body = apiclient.http.MediaFileUpload(
                                                     FilePath,
                                                     mimetype=MimeType,
                                                     resumable=True
-                                                    )
+                    )
         body = {
                 'title': FileName,
                 'description': 'A shiny new text document about hello world.',
                 }
-     
         drive_service.files().insert(body=body, media_body=media_body).execute()
-        result = retrieve_all_files(drive_service)
         
-        
+#         def retrieve_all_files(service):
+#             result = []
+#             page_token = None
+#             while True:
+#                 try:
+#                     param = {}
+#                     if page_token:
+#                         param['pageToken'] = page_token
+#                     files = service.files().list(**param).execute()
+#                       
+#                     result.extend(files['items'])
+#                     page_token = files.get('nextPageToken')
+#                     if not page_token:
+#                         break
+#                 except errors.HttpError, error:
+#                     print 'An error occurred: %s' % error
+#                      
+#                     import pdb; pdb.set_trace()
+#                     break
+#             return result
+#         result = retrieve_all_files(drive_service)
+         
+         
         return HttpResponse('File added : ' + FileName )
-    except Exception,e:
-        import pdb; pdb.set_trace()
+    except :
         os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken' )
         return redirect('/gdrive/')
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
+         
+     
+     
+     
+     
+     
+     
+     
+     
+     

@@ -1,7 +1,11 @@
 <html>
-	<h1>UserID:{{user}}</h1>
+	<h1>UserID:{{user}}</h1><h1>Second War</h1>
+	<br />
+	<br />
+	<br />
 	Add your file to upload:
-	<form action="/gdrive/firstwar/" method="post" enctype="multipart/form-data">
+	
+	<form action="/gdrive/secondwar/" method="post" enctype="multipart/form-data">
 		{% csrf_token %}
 		{{form}}
 		<input type="submit" value="Go" />

@@ -1,0 +1,15 @@
+client_config_backend: settings
+client_config:
+  client_id: 705714547134-igqsck5ph2ug7l553nlhh6871nrush06.apps.googleusercontent.com
+  client_secret: y9wWIDqx_cvM-FSeA8RJseD3
+  redirect_uri: 'http://localhost:8000/gdrive/secondwar/'
+
+save_credentials: True
+save_credentials_backend: file
+save_credentials_file: credentials.json
+
+get_refresh_token: True
+
+oauth_scope:
+  - https://www.googleapis.com/auth/drive.file
+  - https://www.googleapis.com/auth/drive.install
