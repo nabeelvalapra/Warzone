@@ -108,7 +108,9 @@ def google_file_exce(credentials,request):
      
         drive_service.files().insert(body=body, media_body=media_body).execute()
         result = retrieve_all_files(drive_service)
-        return HttpResponse('File added : ' + FileName + 'aa' + str(result))
+        
+        
+        return HttpResponse('File added : ' + FileName )
     except Exception,e:
         import pdb; pdb.set_trace()
         os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken' )
