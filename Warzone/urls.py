@@ -16,6 +16,7 @@ urlpatterns = patterns('',
     url(r'^registration02/',include('registration02.urls')),
 
     url(r'^gdrive/',include('gdrive.urls')),
+    url(r'^gdrive2/',include('gdrive2.urls')),
     
     url(r'^fmzone/',include('fmzone.urls')),
     
