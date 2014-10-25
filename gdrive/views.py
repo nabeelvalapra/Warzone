@@ -20,69 +20,43 @@ from pydrive.drive import GoogleDrive
 
 @login_required
 def upload2(request):
-    def createflow(user):
+    def createflow():
         OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive'
         CLIENT_SECRETS = 'gdrive/client_secrets.json'
         REDIRECT_URI = 'http://localhost:8000/gdrive/secondwar/'
+        
         FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
         FLOW.redirect_uri = REDIRECT_URI
-        FlowModel(user=user,flow=FLOW).save()
-        
-    if request.method == 'POST':
-        form = FileForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = request.user
-            
-            savedfile = form.save()
-             
-            request.session['file_id'] = str(savedfile.id)
-            request.session['filename'] = str(request.FILES['file_name'])
-            request.session['filepath'] = str(savedfile.file_name.path)
-                                    
-            storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
-            
-            try:
-                if not storage.get():  # 'not' is important for testing
-                    OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive'
-                    CLIENT_SECRETS = 'gdrive/client_secrets.json'
-                    REDIRECT_URI = 'http://localhost:8000/gdrive/secondwar/'
-                    FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
-                    FLOW.redirect_uri = REDIRECT_URI
-                    FlowModel(user=user,flow=FLOW).save()
-                    authorize_url = FLOW.step1_get_authorize_url()
-                    
-                    return redirect(authorize_url)
-                
-                else:
-                    credentials = storage.get()
-                    return filehandler(request, credentials, 'upload')
-            except:
-                os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
-                return redirect('/')
-
-    elif request.method == 'GET':
-        if request.GET.get('code'):
-            token = request.GET.get('code')
-            user = User.objects.get(id=request.user.id)
-            FLOW = FlowModel.objects.get(user_id=user.id).flow
-             
-            credentials = FLOW.step2_exchange(token)
-            storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
+        FlowModel(user=user,flow=FLOW).save() #Save the flow to DB.
+        authorize_url = FLOW.step1_get_authorize_url()
+        return authorize_url
+    
+    def retriveflow():
+        user = User.objects.get(id=request.user.id)
+        Flow = FlowModel.objects.get(user_id=user.id).flow
+        return Flow
+    
+    def savecredential(credential, _type):
+        if _type == 'Storage':
+            storage = Storage('gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
             storage.put(credentials)
-            
-            return filehandler(request, credentials, 'upload')
-        
+            return True
         else:
-            form = FileForm() 
+            pass
+        return False
+    
+    def has_credential():
+        STORAGE_FILENAME = 'gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken'
+        storage = Storage(STORAGE_FILENAME)
+        if storage.get():
+            return storage.get()
+        else:
+            return False
         
-    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form,'user':request.user.id})
-
-
-def filehandler(request, credentials, action):
-    gauth = GoogleAuth()
-    gauth.credentials = credentials
-
-    if action == 'upload':            
+    def filehandler(credentials, action):
+        gauth = GoogleAuth()
+        gauth.credentials = credentials
+    
         FileName = request.session['filename']
         FilePath = request.session['filepath']
         
@@ -90,12 +64,45 @@ def filehandler(request, credentials, action):
         file1 = drive.CreateFile({'title': FileName})
         file1.SetContentFile(FilePath)
         file1.Upload()
-    elif action == 'list':
-        file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
-        abc = ''
-        for file1 in file_list:
-            abc += '\n title: %s \n' % (file1['title'])
-    return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
+        return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
+            
+    if request.method == 'POST':
+        form = FileForm(request.POST, request.FILES)
+        if form.is_valid():
+            user = request.user
+            
+            savedfile = form.save()
+            request.session['file_id'] = str(savedfile.id)
+            request.session['filename'] = str(request.FILES['file_name'])
+            request.session['filepath'] = str(savedfile.file_name.path)
+                                    
+            try:
+                if has_credential():    
+                    credentials = has_credential()
+                    return filehandler(credentials, 'upload')
+                else:
+                    authorize_url = createflow()
+                    return redirect(authorize_url)
+            except Exception,e:
+                os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
+                return HttpResponse(str(e))
+            
+    elif request.method == 'GET':
+        if request.GET.get('code'):
+            token = request.GET.get('code')
+            
+            Flow = retriveflow()
+            credentials = Flow.step2_exchange(token)
+            savecredential(credentials,'Storage')
+            
+            return filehandler(credentials, 'upload')
+        else:
+            form = FileForm() 
+        
+    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form,'user':request.user.id})
+
+
+    
     
  
  
