@@ -20,6 +20,14 @@ from pydrive.drive import GoogleDrive
 
 @login_required
 def upload2(request):
+    def createflow(user):
+        OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive'
+        CLIENT_SECRETS = 'gdrive/client_secrets.json'
+        REDIRECT_URI = 'http://localhost:8000/gdrive/secondwar/'
+        FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
+        FLOW.redirect_uri = REDIRECT_URI
+        FlowModel(user=user,flow=FLOW).save()
+        
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -73,15 +81,20 @@ def upload2(request):
 def filehandler(request, credentials, action):
     gauth = GoogleAuth()
     gauth.credentials = credentials
-            
-    FileName = request.session['filename']
-    FilePath = request.session['filepath']
-    
-    drive = GoogleDrive(gauth)
-    file1 = drive.CreateFile({'title': FileName})
-    file1.SetContentFile(FilePath)
-    file1.Upload()
-    
+
+    if action == 'upload':            
+        FileName = request.session['filename']
+        FilePath = request.session['filepath']
+        
+        drive = GoogleDrive(gauth)
+        file1 = drive.CreateFile({'title': FileName})
+        file1.SetContentFile(FilePath)
+        file1.Upload()
+    elif action == 'list':
+        file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+        abc = ''
+        for file1 in file_list:
+            abc += '\n title: %s \n' % (file1['title'])
     return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
     
  
@@ -116,6 +129,7 @@ def firstwar(request):
             except:
                 os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
                 return redirect('/')
+            
     elif request.method == 'GET':
         if request.GET.get('code'):
             token = request.GET.get("code")
@@ -133,7 +147,7 @@ def firstwar(request):
                  
     return render(request,'gdrive/firstwar/uploadfile.html',{'form':form,'user':request.user.id})
  
-
+ 
 def google_file_exce(credentials,request):
     FileName = request.session['filename']
     MimeType = request.session['mimetype']
@@ -148,7 +162,7 @@ def google_file_exce(credentials,request):
                                                     FilePath,
                                                     mimetype=MimeType,
                                                     resumable=True
-                    )
+                                                    )
         body = {
                 'title': FileName,
                 'description': 'A shiny new text document about hello world.',
