@@ -10,7 +10,6 @@ from gdrive.forms import FileForm
 from django.contrib.auth.decorators import login_required
 import os
 from Warzone.settings import BASE_DIR, DRIVE_FILES
-from oauth2client.file import Storage
 from django.core import serializers
 from apiclient import errors
 
@@ -27,7 +26,7 @@ def upload2(request):
         
         FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
         FLOW.redirect_uri = REDIRECT_URI
-        FlowModel(user=user,flow=FLOW).save() #Save the flow to DB.dddddddddd
+        FlowModel(user=user,flow=FLOW).save() #Save the flow to DB.
         authorize_url = FLOW.step1_get_authorize_url()
         return authorize_url
     
@@ -37,35 +36,37 @@ def upload2(request):
         return Flow
     
     def savecredential(credential, _type):
-        if _type == 'Storage':
-            storage = Storage('gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
-            storage.put(credentials)
-            return True
-        else:
-            pass
-        return False
+        CredentialsModel(user=request.user,credential=credential).save()
+        return True
     
     def has_credential():
-        STORAGE_FILENAME = 'gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken'
-        storage = Storage(STORAGE_FILENAME)
-        if storage.get():
-            return storage.get()
+        if CredentialsModel.objects.filter(user_id=request.user.id).exists():
+            return CredentialsModel.objects.get(user_id=request.user.id).credential
         else:
             return False
         
     def filehandler(credentials, action):
+        
         gauth = GoogleAuth()
         gauth.credentials = credentials
-    
-        FileName = request.session['filename']
-        FilePath = request.session['filepath']
-        
         drive = GoogleDrive(gauth)
-        file1 = drive.CreateFile({'title': FileName})
-        file1.SetContentFile(FilePath)
-        file1.Upload()
-        return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
+        if action == 'upload':
+            FileName = request.session['filename']
+            FilePath = request.session['filepath']
             
+            file1 = drive.CreateFile({'title': FileName})
+            file1.SetContentFile(FilePath)
+            file1.Upload()
+        else:
+            file_list = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+            filelist = '<br>'
+            for file in file_list:
+                filelist += file['title']
+                filelist += '<br>'
+            return HttpResponse(filelist)
+        return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
+    
+#============================================================================================================ 
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -77,15 +78,20 @@ def upload2(request):
             request.session['filepath'] = str(savedfile.file_name.path)
                                     
             try:
-                if has_credential():    
+                if has_credential():   
                     credentials = has_credential()
                     return filehandler(credentials, 'upload')
                 else:
+                    
                     authorize_url = createflow()
                     return redirect(authorize_url)
             except Exception,e:
-                os.remove(BASE_DIR+'/gdrive/Storage/UserID_'+str(request.user.id)+'_FirstDriveToken')
-                return HttpResponse(str(e))
+                try:
+                    CredentialsModel.objects.filter(user_id=request.user.id).delete()
+                except:
+                    pass
+                finally:
+                    return HttpResponse(str(e) + '<br> An Error has Occured:::Exception')
             
     elif request.method == 'GET':
         if request.GET.get('code'):
@@ -93,7 +99,7 @@ def upload2(request):
             
             Flow = retriveflow()
             credentials = Flow.step2_exchange(token)
-            savecredential(credentials,'Storage')
+            savecredential(credentials,'DB')
             
             return filehandler(credentials, 'upload')
         else:
@@ -105,7 +111,12 @@ def upload2(request):
     
     
  
- 
+#============================================================================================================
+#============================================================================================================
+#============================================================================================================
+#============================================================================================================
+#============================================================================================================
+#============================================================================================================
 @login_required
 def firstwar(request):
     if request.method == 'POST':
@@ -119,7 +130,7 @@ def firstwar(request):
             request.session['filepath'] = str(savedfile.file_name.path)
             user = request.user
              
-            storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
+            storage = oauth2client.file.Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
             try:
                 if not storage.get():
                     OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive'
@@ -145,7 +156,7 @@ def firstwar(request):
             FLOW = FlowModel.objects.get(user_id=user.id).flow
              
             credentials = FLOW.step2_exchange(token)
-            storage = Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
+            storage = oauth2client.file.Storage('gdrive/Storage/UserID_'+str(user.id)+'_FirstDriveToken')
             storage.put(credentials)
              
             return google_file_exce(credentials,request)
