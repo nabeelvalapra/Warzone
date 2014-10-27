@@ -27,7 +27,7 @@ def upload2(request):
         
         FLOW = oauth2client.client.flow_from_clientsecrets(CLIENT_SECRETS, OAUTH2_SCOPE)
         FLOW.redirect_uri = REDIRECT_URI
-        FlowModel(user=user,flow=FLOW).save() #Save the flow to DB.
+        FlowModel(user=user,flow=FLOW).save() #Save the flow to DB.dddddddddd
         authorize_url = FLOW.step1_get_authorize_url()
         return authorize_url
     
