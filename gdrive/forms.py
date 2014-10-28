@@ -6,3 +6,7 @@ class FileForm(forms.ModelForm):
         model = DriveFiles
         fields = ['file_name']
     
+
+class ChoicesForm(forms.Form):
+    CHOICES = (('1','Upload'),('2','List'),('3','CreateFolder'))
+    choice = forms.ChoiceField(widget=forms.RadioSelect,choices=CHOICES)

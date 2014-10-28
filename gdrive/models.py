@@ -9,20 +9,13 @@ class DriveFiles(models.Model):
     
     class Meta:
         db_table = 'drivefile'
-        
 
-class FlowModel(models.Model):
-    user = models.ForeignKey(User,primary_key=True)
+class GoogleDriveCoreModel(models.Model):
+    user = models.OneToOneField(User)
     flow = FlowField()
+    credential = CredentialsField()
+    mainfolderID = models.CharField(max_length=200,null=True)
     
     class Meta:
-        db_table = 'flow_model'
-        
-        
-class CredentialsModel(models.Model):
-    user = models.ForeignKey(User)
-    credential = CredentialsField()
+        db_table = 'google_drive_core_model'    
 
-    class Meta:
-        db_table = 'credential_model'
-        
