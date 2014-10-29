@@ -16,6 +16,8 @@ from apiclient import errors
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import json
+from apiclient.http import MediaFileUpload
+from nevow.url import createForwarder
 
 
 @login_required
@@ -46,70 +48,89 @@ def upload2(request):
             return GoogleDriveCoreModel.objects.get(user_id=request.user.id).credential
         else:
             return False
+    
+    def create_service(creds):
+        http = httplib2.Http()
+        creds.authorize(http)
+        return build('drive', 'v2', http=http)  
+    
+    def create_Folder(service, APP_NAME, parentID = None):
+        body = {
+          'title': APP_NAME,
+          'mimeType': "application/vnd.google-apps.folder"
+        }
+        if parentID:
+            body['parents'] = [{'id': parentID}]
+        root_folder = service.files().insert(body = body).execute()
+        return root_folder['id'] 
+     
+    def main_folder_exists(service,mainfolderID):
+        meta_list = retrieve_all_files(service)
+        for _ in meta_list:
+            if _['id'] == str(mainfolderID):
+                return True
+        return False
         
-    def main_folder_exists(drive,mainfolderID):
+    def create_main_folder_and_save_id(service):
+        folder_id = create_Folder(service, APP_NAME)
+        MainFolderIDModel(user_id=request.user.id,mainfolderID=folder_id).save()
+        return folder_id
+    
+    def insert_file(service, title, description, parent_id, mime_type, filename):
+        media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
+        body = {
+                'title': title,
+                'description': description,
+                'mimeType': mime_type
+        }
+        if parent_id:
+            body['parents'] = [{'id': parent_id}]
         try:
-            query = "'"+str(mainfolderID)+"' in parents and trashed=false"
-            final_query = {'q':query}
-            final = json.dumps(final_query)
-            
-            file_list = drive.ListFile(json.loads(final)).GetList()
-            return file_list
-        except:
-            #If any exception occurs, might need to blank the 'main folder' column in the GoogleDriveCoreModel
-            return False
+            file = service.files().insert(
+                                          body=body,
+                                          media_body=media_body
+                                          ).execute()
+            return file
+        except errors.HttpError, error:
+            print 'An error occured: %s' % error
+            return None
         
-    def create_main_folder_and_save_id(drive):
-        if True:
-            new_folder = drive.CreateFile({'title':'{}'.format(APP_NAME),
-                                           'mimeType':'application/vnd.google-apps.folder'})
-            new_folder.Upload()
-            MainFolderIDModel.objects.filter(user_id=request.user.id).update(mainfolderID=new_folder['id'])
-            return new_folder['id']
-        else:
-            return False
-        
+    def retrieve_all_files(service,query=''):
+        filelist = service.files().list(q=query).execute()
+        return filelist['items']
+    
     def filehandler(credentials, action):
-        gauth = GoogleAuth()
-        gauth.credentials = credentials
-        drive = GoogleDrive(gauth)
+        service = create_service(credentials)
         
         if MainFolderIDModel.objects.filter(user_id=request.user.id).exists():
             mainfolderID = MainFolderIDModel.objects.get(user_id=request.user.id).mainfolderID
-            if not main_folder_exists(drive, mainfolderID):
-                mainfolderID = create_main_folder_and_save_id(drive)
-                MainFolderIDModel(user=request.user,mainfolderID=mainfolderID).save()
+            if not main_folder_exists(service, mainfolderID):
+                MainFolderIDModel.objects.filter(user_id=request.user.id).delete()
+                mainfolderID = create_main_folder_and_save_id(service)
         else:
-            mainfolderID = create_main_folder_and_save_id(drive) 
-            MainFolderIDModel(user=request.user,mainfolderID=mainfolderID).save()
+            mainfolderID = create_main_folder_and_save_id(service)
             
-        if action == '1':#Upload
+        if action == '1':
             FileName = request.session['filename']
             FilePath = request.session['filepath']
-            file1 = drive.CreateFile({'title': FileName,'parent': APP_NAME,'parents':[{u'id':str(mainfolderID) }]})
-            file1.SetContentFile(FilePath)
-            file1.Upload()
-            return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
-        
-        elif action == '2':#list
-            query = "'"+str(mainfolderID)+"' in parents and trashed=false"
-            final_query = {'q':query}
-            final = json.dumps(final_query)
-            file_list = drive.ListFile(json.loads(final)).GetList()
-            filelist = '<br>'
-            for _ in file_list:
-                filelist += _['title']
-                if _['mimeType'] == 'image/jpeg':
-                    filelist += '<img src="https://drive.google.com/uc?id=' + _['id'] + '" style="width:50%;height:50% " ><br>'
-                filelist += '<br>'
-            return HttpResponse('Your files are:' + filelist)
-        
-        elif action == '3':
-            if create_main_folder_and_save_id(drive):
-                return HttpResponse('Creted new Folder!!!')
+            MimeType = request.session['mimetype'] 
+            file = insert_file(service, FileName, 'description', mainfolderID, MimeType, FilePath) 
+            if file:
+                return HttpResponse('Attaboy, you got the filehander, the file seems uploaded!!!')
             else:
-                return False
+                return HttpResponse('Sorry')
             
+        elif action == '2':
+            q = "'%s' in parents" % mainfolderID
+            file_list = retrieve_all_files(service, query=q)
+            outstring = '<br>'
+            for file in file_list:
+                outstring += file['title']
+                if file['mimeType'] == 'image/jpeg':
+                    outstring += '<img src="https://drive.google.com/uc?id=' + file['id'] + '" style="width:25%;height:50% " ><br>'
+                outstring += '<br>'
+            return HttpResponse('Your files are:' + outstring)
+         
 #========================================================================================================================================================== 
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
@@ -121,6 +142,7 @@ def upload2(request):
             savedfile = form.save()
             request.session['file_id'] = str(savedfile.id)
             request.session['filename'] = str(request.FILES['file_name'])
+            request.session['mimetype'] = str(request.FILES['file_name'].content_type)
             request.session['filepath'] = str(savedfile.file_name.path)
                                     
             try:
@@ -134,7 +156,7 @@ def upload2(request):
             except Exception,e:
                 GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
                 # FolderID need to be saved in another table.
-                return HttpResponse('<br>Operation Failed!!! An Error has Occured:::Exception:::'+str(e))
+                return HttpResponse('<br>Operation Failed!!! An Error has Occured:::Exception:::<br><br>'+str(e))
             
     elif request.method == 'GET':
         if request.GET.get('code'):
