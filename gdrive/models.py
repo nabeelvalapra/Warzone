@@ -14,8 +14,13 @@ class GoogleDriveCoreModel(models.Model):
     user = models.OneToOneField(User)
     flow = FlowField()
     credential = CredentialsField()
-    mainfolderID = models.CharField(max_length=200,null=True)
     
     class Meta:
         db_table = 'google_drive_core_model'    
+
+class MainFolderIDModel(models.Model):
+    user = models.OneToOneField(User)
+    mainfolderID = models.CharField(max_length=200)
+    class Meta:
+        db_table = 'mainfolderidmodel'
 

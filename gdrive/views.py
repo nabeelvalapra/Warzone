@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect, render_to_response
 from django.http.response import HttpResponse, HttpResponseRedirect
 import httplib2
 import apiclient
-from gdrive.models import DriveFiles, GoogleDriveCoreModel
+from gdrive.models import DriveFiles, GoogleDriveCoreModel, MainFolderIDModel
 from django.contrib.auth.models import User
 import oauth2client
 from apiclient.discovery import build
@@ -21,7 +21,6 @@ import json
 @login_required
 def upload2(request):
     APP_NAME = 'MyFirstDrive'
-    MAIN_FOLDER_ID = ''
     def createflow():
         OAUTH2_SCOPE = 'https://www.googleapis.com/auth/drive.file'
         CLIENT_SECRETS = 'gdrive/client_secrets.json'
@@ -57,6 +56,7 @@ def upload2(request):
             file_list = drive.ListFile(json.loads(final)).GetList()
             return file_list
         except:
+            #If any exception occurs, might need to blank the 'main folder' column in the GoogleDriveCoreModel
             return False
         
     def create_main_folder_and_save_id(drive):
@@ -64,7 +64,7 @@ def upload2(request):
             new_folder = drive.CreateFile({'title':'{}'.format(APP_NAME),
                                            'mimeType':'application/vnd.google-apps.folder'})
             new_folder.Upload()
-            GoogleDriveCoreModel.objects.filter(user_id=request.user.id).update(mainfolderID=new_folder['id'])
+            MainFolderIDModel.objects.filter(user_id=request.user.id).update(mainfolderID=new_folder['id'])
             return new_folder['id']
         else:
             return False
@@ -74,11 +74,14 @@ def upload2(request):
         gauth.credentials = credentials
         drive = GoogleDrive(gauth)
         
-        mainfolderID = GoogleDriveCoreModel.objects.get(user_id=request.user.id).mainfolderID  
-        if mainfolderID == None:
-            mainfolderID = 'mainfoldernotfound'     
-        if not main_folder_exists(drive, mainfolderID):
+        if MainFolderIDModel.objects.filter(user_id=request.user.id).exists():
+            mainfolderID = MainFolderIDModel.objects.get(user_id=request.user.id).mainfolderID
+            if not main_folder_exists(drive, mainfolderID):
+                mainfolderID = create_main_folder_and_save_id(drive)
+                MainFolderIDModel(user=request.user,mainfolderID=mainfolderID).save()
+        else:
             mainfolderID = create_main_folder_and_save_id(drive) 
+            MainFolderIDModel(user=request.user,mainfolderID=mainfolderID).save()
             
         if action == '1':#Upload
             FileName = request.session['filename']
@@ -94,10 +97,10 @@ def upload2(request):
             final = json.dumps(final_query)
             file_list = drive.ListFile(json.loads(final)).GetList()
             filelist = '<br>'
-            for file in file_list:
-                #file_id = str(file['id'])
-                #filelist += '<a href="https://drive.google.com/uc?id=' + file_id + '"/>' + '<br>'
-                filelist += file['title']
+            for _ in file_list:
+                filelist += _['title']
+                if _['mimeType'] == 'image/jpeg':
+                    filelist += '<img src="https://drive.google.com/uc?id=' + _['id'] + '" style="width:50%;height:50% " ><br>'
                 filelist += '<br>'
             return HttpResponse('Your files are:' + filelist)
         
@@ -129,6 +132,8 @@ def upload2(request):
                     request.session['option'] = option
                     return redirect(authorize_url)
             except Exception,e:
+                GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
+                # FolderID need to be saved in another table.
                 return HttpResponse('<br>Operation Failed!!! An Error has Occured:::Exception:::'+str(e))
             
     elif request.method == 'GET':
@@ -150,12 +155,12 @@ def upload2(request):
     
     
  
-#=============================================================================================================
-#=============================================================================================================
-#=============================================================================================================
-#=============================================================================================================
-#=============================================================================================================
-#=============================================================================================================
+#==========================================================================================================================================================
+#==========================================================================================================================================================
+#==========================================================================================================================================================
+#==========================================================================================================================================================
+#==========================================================================================================================================================
+#==========================================================================================================================================================
 @login_required
 def firstwar(request):
     if request.method == 'POST':
