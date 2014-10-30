@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.core.context_processors import csrf
 from django.contrib import auth
 from django.http import HttpResponseRedirect
@@ -75,7 +75,7 @@ def auth_login(request):
             return HttpResponseRedirect('/registration02/loggedin/')
         else:
             return HttpResponseRedirect('/registration02/')
-
+        
     
 def loggedin(request):
     return render_to_response('registration02/loggedin.html')
