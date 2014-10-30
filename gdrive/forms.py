@@ -8,5 +8,5 @@ class FileForm(forms.ModelForm):
     
 
 class ChoicesForm(forms.Form):
-    CHOICES = (('1','Upload'),('2','List'),('3','CreateFolder'))
+    CHOICES = (('1','Upload'),('2','List'),('3','Delete the folder'))
     choice = forms.ChoiceField(widget=forms.RadioSelect,choices=CHOICES)
