@@ -8,6 +8,7 @@ urlpatterns = patterns('',
          url(r'^firstwar/$', views.firstwar ,name='mainpage'),
         
         url(r'^secondwar/$' , views.upload2 , name='mainpage2'),
+        #url(r'^secondwar/auth/$', views.login_GoogleDrive, name='login_GoogleDrive'),
         url(r'^secondwar/code/$' , views.gdrive_callback , name='callback'),
         url(r'secondwar/logout/$', views.logoutfromhere , name='logout')
 

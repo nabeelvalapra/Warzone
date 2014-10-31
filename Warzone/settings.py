@@ -59,6 +59,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
     'django.contrib.sessions.middleware.SessionMiddleware',
+    
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 )
 
 ROOT_URLCONF = 'Warzone.urls'
