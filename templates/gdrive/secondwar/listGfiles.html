@@ -1,0 +1,10 @@
+<html>
+	<form action="">
+		{% csrf_token %}
+		{{ listform.management_form}}
+		{% for form in listform %}
+			{{form.as_ul}}
+		{% endfor %}
+		<input type="submit" value="Go"/>
+	</form>
+</html>

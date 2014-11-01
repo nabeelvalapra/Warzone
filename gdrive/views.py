@@ -1,12 +1,13 @@
 from django.shortcuts import render,redirect, render_to_response
 import apiclient
-from gdrive.forms import FileForm
+from gdrive.forms import FileForm, FileListForm
 from django.contrib.auth.decorators import login_required
 import os
 from Warzone.settings import BASE_DIR 
 from django.contrib.auth import logout
 from GoogleDriveFunctions import *
 from django.core.urlresolvers import reverse
+from django.forms.formsets import formset_factory
     
 
 @login_required(login_url='/registration02/')
@@ -46,12 +47,22 @@ def upload2(request, *args, **kwargs):
 def listGfiles(request, *args, **kwargs):
     q = "'%s' in parents" % kwargs['mainfolderID']
     file_list = retrieve_all_files(kwargs['service'], query=q)
-    outstring = '<br>'
+    filelist_formset = formset_factory(FileListForm, can_delete=True)
+    formsetInitial = []
+    d = {}
     for file in file_list:
-        outstring += '<a href="https://drive.google.com/uc?id=' + file['id'] + '">'+file['title']+'</a><br>'
-        outstring += '<br>'
-    return HttpResponse('Your files are:' + outstring)
-   
+        d = {'fname': file['title']}
+        formsetInitial.append(d)    
+    loadedformset = filelist_formset(initial=formsetInitial)
+    return render(request,'gdrive/secondwar/listGfiles.html',{'listform':loadedformset,'user':request.user.id})
+
+
+@login_required(login_url='/registration02/')
+@auth_check
+def handlelist(request):
+#     https://docs.djangoproject.com/en/1.5/topics/forms/formsets/#can-delete
+    return None
+
    
 def logoutfromhere(request):
     logout(request)

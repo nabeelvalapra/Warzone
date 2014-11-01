@@ -1,5 +1,5 @@
 from django.http.response import HttpResponse
-from gdrive.models import MainFolderIDModel, GoogleDriveCoreModel
+from gdrive.models import MainFolderIDModel, GoogleDriveCoreModel, FileInfo
 from apiclient import errors
 from apiclient.http import MediaFileUpload
 import httplib2
@@ -132,24 +132,12 @@ def Upload_File_Handler(request, credentials, service, mainfolderID, FileName, F
     try:
         _file = insert_file(service, FileName, FilePath, parent_id=mainfolderID) 
         if _file:
+            f = FileInfo(fileinfo=_file['id']).save()
             os.remove(FilePath)
+            #f.id can be returned if necessary.
             return HttpResponse('Boy, you got the filehander, the file seems uploaded!!!')
     except Exception, e:
         raise Exception("Oops, there was an error in your filehandler function<br>" + str(e))
-
-#             
-#         elif action == '2':
-#            
-#         elif action == '3':
-#             mainfolderID = ''
-#             if MainFolderIDModel.objects.filter(user_id=request.user.id).exists():
-#                 mainfolderID = MainFolderIDModel.objects.get(user_id=request.user.id).mainfolderID
-#                 if not main_folder_exists(service, mainfolderID):
-#                     return HttpResponse('File not exist.')
-#                 else:
-#                     delete_file(service, mainfolderID)
-#             return HttpResponse('File deleted')
-        
     
 
 def auth_check(view_func): 
@@ -179,7 +167,7 @@ def auth_check(view_func):
                 authorize_url = createflow(request)
                 return redirect(authorize_url)
         except Exception, e:
-            GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
+#             GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
 #             authorize_url = createflow(request)
 #             return redirect(authorize_url) 
             return HttpResponse("You had an exception in Auth_check.<br>" + str(e))
