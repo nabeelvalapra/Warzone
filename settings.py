@@ -43,7 +43,7 @@ INSTALLED_APPS = (
     'hello',
     
     'gdrive',
-    #'oauth2_provider',
+    'oauth2_provider',
     'django.contrib.sites',
     'django.contrib.sessions',
     

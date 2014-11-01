@@ -1,50 +1,58 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, render_to_response
 import apiclient
-from gdrive.forms import FileForm, ChoicesForm
+from gdrive.forms import FileForm
 from django.contrib.auth.decorators import login_required
 import os
 from Warzone.settings import BASE_DIR 
 from django.contrib.auth import logout
 from GoogleDriveFunctions import *
-import csv
+from django.core.urlresolvers import reverse
+    
+
+@login_required(login_url='/registration02/')
+@auth_check
+def index2(request, *args, **kwargs):
+    form = FileForm()
+    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form})
 
 
 @login_required(login_url='/registration02/')
 @auth_check
-def upload2(request):
+def upload2(request, *args, **kwargs):
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
-        choices = ChoicesForm(request.POST)
-        option = request.POST.get('choice')
         if form.is_valid():
-            credentials = has_credential(request)
             savedfile = form.save()
             
             File = request.FILES.get('file_name')
             FileName = File.name
             FilePath = str(savedfile.file_name.path)
             
-            return filehandler(request, credentials, FileName, FilePath ,action='1')  
+            credentials = kwargs['credentials']
+            service = kwargs['service']
+            mainfolderID = kwargs['mainfolderID']
+            
+            return Upload_File_Handler(request, credentials, service, mainfolderID, FileName, FilePath)  
         else:
-            HttpResponse('Form is not valid.')                      
+            return HttpResponse('Form is not valid.')                      
     else:
         form = FileForm() 
-        choices = ChoicesForm()
                     
-    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form,'choices':choices,'user':request.user.id})
+    return render(request,'gdrive/secondwar/uploadfile.html',{'form':form,'user':request.user.id})
 
 
-def gdrive_callback(request):
-    token = request.GET.get('code')
-    if token:
-        #option = request.session['option']
-        Flow = retriveflow(request)
-        credentials = Flow.step2_exchange(token)
-        savecredential(request, credentials)
-        create_service(credentials)
-        return redirect('/gdrive/secondwar/')
-
-
+@login_required(login_url='/registration02/')
+@auth_check
+def listGfiles(request, *args, **kwargs):
+    q = "'%s' in parents" % kwargs['mainfolderID']
+    file_list = retrieve_all_files(kwargs['service'], query=q)
+    outstring = '<br>'
+    for file in file_list:
+        outstring += '<a href="https://drive.google.com/uc?id=' + file['id'] + '">'+file['title']+'</a><br>'
+        outstring += '<br>'
+    return HttpResponse('Your files are:' + outstring)
+   
+   
 def logoutfromhere(request):
     logout(request)
     return HttpResponse('You sucessfully logged out.')

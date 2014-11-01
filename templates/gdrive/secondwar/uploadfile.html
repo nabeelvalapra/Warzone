@@ -3,17 +3,18 @@
 	<br />
 	<br />
 	<br />
-	Add your file to upload:
+	File to upload:
 	
-	<form action="/gdrive/secondwar/" method="post" enctype="multipart/form-data">
+	<form action="/gdrive/secondwar/upload2/" method="post" enctype="multipart/form-data">
 		{% csrf_token %}
 		{{form}}
-		{{choices.as_p}}
+		<br />
 		<input type="submit" value="Go" />
 	</form>
 	
 	
 	<br />
+	<a href="/gdrive/secondwar/listGfiles/">List of App Files</a>
 	<br />
 	<br />
 	<br />
