@@ -1,6 +1,6 @@
 from django import forms
 from gdrive.models import DriveFiles
-from django.forms.widgets import HiddenInput
+from django.forms.widgets import HiddenInput, Widget
 
 
 class FileForm(forms.ModelForm):
@@ -26,4 +26,5 @@ class FileForm(forms.ModelForm):
 #             counter +=1
             
 class FileListForm(forms.Form):
-    fname = forms.CharField()           
+    fname = forms.CharField()
+    fileid = forms.CharField(widget=HiddenInput())           

@@ -1,8 +1,8 @@
 <html>
-	<form action="">
+	<form action="/gdrive/secondwar/listGfiles/" method="post">
 		{% csrf_token %}
-		{{ listform.management_form}}
-		{% for form in listform %}
+		{{ formset.management_form}}
+		{% for form in formset %}
 			{{form.as_ul}}
 		{% endfor %}
 		<input type="submit" value="Go"/>
