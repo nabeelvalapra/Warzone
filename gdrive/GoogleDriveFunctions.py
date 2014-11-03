@@ -167,9 +167,10 @@ def auth_check(view_func):
                 authorize_url = createflow(request)
                 return redirect(authorize_url)
         except Exception, e:
-#             GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
-#             authorize_url = createflow(request)
-#             return redirect(authorize_url) 
+            #To check the exception hash the first 3 lines.
+            GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
+            authorize_url = createflow(request)
+            return redirect(authorize_url) 
             return HttpResponse("You had an exception in Auth_check.<br>" + str(e))
     return _wrapped_view_func
 

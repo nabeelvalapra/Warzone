@@ -43,7 +43,6 @@ INSTALLED_APPS = (
     'hello',
     
     'gdrive',
-    #'oauth2_provider',
     'django.contrib.sites',
     'django.contrib.sessions',
     
@@ -105,5 +104,3 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = '/home/nabeel/django/Warzone/gdrive'
 DRIVE_FILES = 'DriveFiles'
 TEMPLATE_DIRS = [os.path.join(BASE_DIR,'templates')]
-CLIENT_SECRET = 'n9GuIEOGaRL_1FAvwBxvCbdk'
-GDRIVE_CLIENT_SECRETS = os.path.join(BASE_DIR, 'client_secret.json')

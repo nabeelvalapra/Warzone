@@ -5,7 +5,6 @@ from gdrive import views, GoogleDriveFunctions
 
 urlpatterns = patterns('',
          
-        url(r'^firstwar/$', views.firstwar ,name='mainpage'),
         url(r'^secondwar/$', views.index2, name='index2'),
         url(r'^secondwar/upload2/$' , views.upload2 , kwargs={'credentials':''}, name='mainpage2'),
         url(r'^secondwar/listGfiles/$' , views.listGfiles , name='listGfiles'),
