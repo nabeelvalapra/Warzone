@@ -112,14 +112,16 @@ def insert_file(service, FileName, FilePath, parent_id):
                                       media_body=media_body
                                       ).execute()
         return _file
-    except:
-        raise Exception('Your file seems corupted, you have an error in the insert function')
+    except Exception, e:
+        raise Exception('Your file seems corupted, you have an error in the insert function' + str(e))
     
     
 def retrieve_all_files(service,query=''):
+    try:
         filelist = service.files().list(q=query).execute()
         return filelist['items']
-
+    except Exception, e:
+        raise Exception("You have error in retriving in files, The error is:" + str(e))
 
 def delete_file(service, file_id):
     try:
@@ -168,9 +170,9 @@ def auth_check(view_func):
                 return redirect(authorize_url)
         except Exception, e:
             #To check the exception hash the first 3 lines.
-            GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
-            authorize_url = createflow(request)
-            return redirect(authorize_url) 
+#             GoogleDriveCoreModel.objects.filter(user_id=request.user.id).delete()
+#             authorize_url = createflow(request)
+#             return redirect(authorize_url) 
             return HttpResponse("You had an exception in Auth_check.<br>" + str(e))
     return _wrapped_view_func
 

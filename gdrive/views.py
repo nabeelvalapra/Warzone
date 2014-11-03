@@ -8,6 +8,7 @@ from django.contrib.auth import logout
 from GoogleDriveFunctions import *
 from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
+from gdrive.models import DriveFiles
     
 
 @login_required(login_url='/registration02/')
@@ -23,17 +24,25 @@ def upload2(request, *args, **kwargs):
     if request.method == 'POST':
         form = FileForm(request.POST, request.FILES)
         if form.is_valid():
-            savedfile = form.save()
+            Files = request.FILES.getlist('file_name')
             
-            File = request.FILES.get('file_name')
-            FileName = File.name
-            FilePath = str(savedfile.file_name.path)
-            
-            credentials = kwargs['credentials']
             service = kwargs['service']
             mainfolderID = kwargs['mainfolderID']
+
+            try:
+                for file in Files:
+                    tempFile = DriveFiles.objects.create(file_name=file)
+                    FileName = file.name
+                    FilePath = str(tempFile.file_name.path)
+                    _file = insert_file(service, FileName, FilePath, parent_id=mainfolderID) 
+                    if _file:
+                        f = FileInfo(fileinfo=_file['id']).save()
+                        #f.id can be returned if necessary.
+                        os.remove(FilePath)
+                return HttpResponse('Cool, your file seem uploaded.')
+            except Exception, e:
+                raise Exception("Oops, there was an error in your filehandler function<br>" + str(e))
             
-            return Upload_File_Handler(request, credentials, service, mainfolderID, FileName, FilePath)  
         else:
             return HttpResponse('Form is not valid.')                      
     else:
