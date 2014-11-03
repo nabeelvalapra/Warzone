@@ -3,3 +3,4 @@
 *.pyc 
 gdrive/DriveFiles
 gdrive/DriveFiles
+gdrive/client_secrets.json
