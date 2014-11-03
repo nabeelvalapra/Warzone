@@ -75,8 +75,8 @@ def create_Folder(service, APP_NAME, parentID = None):
         }
         if parentID:
             body['parents'] = [{'id': parentID}]
-        root_folder = service.files().insert(body = body).execute()
-        return root_folder['id'] 
+        folder = service.files().insert(body = body).execute()
+        return folder['id'] 
     except:
         raise Exception("Sorry we have an error in creating a folder in your Google drive account.")
  
