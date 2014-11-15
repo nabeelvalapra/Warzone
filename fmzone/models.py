@@ -10,6 +10,9 @@ class Company(models.Model):
     class Meta:
         db_table = 'company'
     
+    class Admin:
+        list_display = ('name') 
+        
     def __str__(self):
         return self.name
     
@@ -53,4 +56,7 @@ class Persons(models.Model):
         
     def __unicode__(self):
         return self.full_name
+    
+
+
 
