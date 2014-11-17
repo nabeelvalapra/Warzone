@@ -19,5 +19,7 @@ urlpatterns = patterns('',
     
     url(r'^fmzone/',include('fmzone.urls')),
     
+    url(r'^makenotification/',include('makenotification.urls', namespace='makenotification')),
+    
     
 )

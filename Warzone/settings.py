@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     
     'fmzone',
+    'makenotification',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -67,6 +68,7 @@ ROOT_URLCONF = 'Warzone.urls'
 
 WSGI_APPLICATION = 'Warzone.wsgi.application'
 
+MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
